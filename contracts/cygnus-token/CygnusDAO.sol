@@ -7,11 +7,15 @@ import {OFTV2} from "./OFTV2.sol";
  *  @title CygnusDAO CYG token built as layer-zero`s OFTV2.
  *  @notice On each chain the CYG token is deployed there is a cap of 2.5M to be minted over 42 epochs (4 years).
  *          See https://github.com/CygnusDAO/cygnus-token/blob/main/contracts/cygnus-token/PillarsOfCreation.sol
- *          Instead of using `totalSupply` to cap the mints, we must keep track internally of the total minted 
+ *          Instead of using `totalSupply` to cap the mints, we must keep track internally of the total minted
  *          amount, to not break compatability with the OFTV2's `_debitFrom` and `_creditTo` functions (since these
  *          burn and mint supply into existence respectively).
  */
 contract CygnusDAO is OFTV2 {
+    /*  ═══════════════════════════════════════════════════════════════════════════════════════════════════════ 
+            1. ERRORS
+        ═══════════════════════════════════════════════════════════════════════════════════════════════════════  */
+
     /// @custom:error ExceedsSupplyCap Reverts when minting above cap
     error ExceedsSupplyCap();
 
@@ -71,6 +75,10 @@ contract CygnusDAO is OFTV2 {
         /// @custom:error OnlyPillars
         if (msg.sender != pillarsOfCreation) revert OnlyPillars();
     }
+
+    /*  ═══════════════════════════════════════════════════════════════════════════════════════════════════════ 
+            6. NON-CONSTANT FUNCTIONS
+        ═══════════════════════════════════════════════════════════════════════════════════════════════════════  */
 
     /*  ────────────────────────────────────────────── External ───────────────────────────────────────────────  */
 
