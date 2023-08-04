@@ -13,8 +13,11 @@ import {OFTV2} from "./OFTV2.sol";
  */
 contract CygnusDAO is OFTV2 {
     /*  ═══════════════════════════════════════════════════════════════════════════════════════════════════════ 
-            1. ERRORS
+            1. ERRORS & EVENTS
         ═══════════════════════════════════════════════════════════════════════════════════════════════════════  */
+
+    /// @custom:event SetCygMinter Emitted when the CYG minter contract is set, can only be emitted once.
+    event NewPillarsOfCreation(address oldPillars, address newPillars);
 
     /// @custom:error ExceedsSupplyCap Reverts when minting above cap
     error ExceedsSupplyCap();
@@ -29,7 +32,7 @@ contract CygnusDAO is OFTV2 {
             2. STORAGE
         ═══════════════════════════════════════════════════════════════════════════════════════════════════════  */
 
-    /// @notice Maximum mint cap of CYG on this chain
+    /// @notice Maximum cap of CYG on this chain
     uint256 public constant CAP = 2_500_000e18;
 
     /// @notice The CYG minter contract
@@ -42,15 +45,20 @@ contract CygnusDAO is OFTV2 {
             3. CONSTRUCTOR
         ═══════════════════════════════════════════════════════════════════════════════════════════════════════  */
 
-    ///  @notice Constructs the CYG OFTV2 token and gives sender initial ownership to set paths.
+    /// @notice Constructs the CYG OFTV2 token and gives sender initial ownership to set paths.
     constructor(
         string memory _name,
         string memory _symbol,
         uint8 _sharedDecimals,
         address _lzEndpoint
     ) OFTV2(_name, _symbol, _sharedDecimals, _lzEndpoint) {
+        // Every chain deployment is the same, 250,000 to 1 year vester, 2,250,000 to pillars
         uint256 initial = 250_000e18;
+
+        // Increase initial minted
         totalMinted += initial;
+
+        // Mint to admin
         _mint(msg.sender, initial);
     }
 
@@ -76,36 +84,38 @@ contract CygnusDAO is OFTV2 {
         if (msg.sender != pillarsOfCreation) revert OnlyPillars();
     }
 
-    /*  ═══════════════════════════════════════════════════════════════════════════════════════════════════════ 
-            6. NON-CONSTANT FUNCTIONS
-        ═══════════════════════════════════════════════════════════════════════════════════════════════════════  */
-
     /*  ────────────────────────────────────────────── External ───────────────────────────────────────────────  */
 
     /// @notice Assigns the only contract on the chain that can mint the CYG token. Can only be set once.
     /// @param _pillars The address of the minter contract
-    /// @custom:security onlyOwner
     function setPillarsOfCreation(address _pillars) external onlyOwner {
-        /// @custom:error PillarsAlreadySet Avoid setting the CYG minter after it has been initialized
-        if (pillarsOfCreation != address(0)) revert PillarsAlreadySet();
+        // Current CYG minter
+        address currentPillars = pillarsOfCreation;
+
+        /// @custom:error PillarsAlreadySet Avoid setting the CYG minter again if already initialized
+        if (currentPillars != address(0)) revert PillarsAlreadySet();
 
         // Assign the only contract that can mint CYG tokens
         pillarsOfCreation = _pillars;
+
+        /// @custom:event SetCygMinter
+        emit NewPillarsOfCreation(currentPillars, _pillars);
     }
 
-    /// @notice Mints CYG token into existence.
+    /// @notice Mints CYG token into existence. Uses stored `totalMinted` instead of `totalSupply` as to not break
+    //          compatability with lzapp's `_debitFrom` and `_creditTo` functions
+    /// @notice Only the owner can mint, in our case it will be the CygnusComplexRewarder.
     /// @param to The receiver of the CYG token
     /// @param amount The amount of CYG token to mint
-    /// @custom:security onlyPillars
     function mint(address to, uint256 amount) external onlyPillars {
         // Gas savings
-        uint256 _totalMinted = totalMinted;
+        uint256 _totalMinted = totalMinted + amount;
 
         /// @custom:error ExceedsSupplyCap Avoid minting above cap
-        if (_totalMinted + amount > CAP) revert ExceedsSupplyCap();
+        if (_totalMinted > CAP) revert ExceedsSupplyCap();
 
         // Increase minted amount
-        totalMinted = _totalMinted + amount;
+        totalMinted = _totalMinted;
 
         // Mint internally
         _mint(to, amount);
