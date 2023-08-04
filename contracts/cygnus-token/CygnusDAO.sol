@@ -87,7 +87,7 @@ contract CygnusDAO is OFTV2 {
     /// @custom:security onlyOwner
     function setPillarsOfCreation(address _pillars) external onlyOwner {
         /// @custom:error PillarsAlreadySet Avoid setting the CYG minter after it has been initialized
-        if (_pillars != address(0)) revert PillarsAlreadySet();
+        if (pillarsOfCreation != address(0)) revert PillarsAlreadySet();
 
         // Assign the only contract that can mint CYG tokens
         pillarsOfCreation = _pillars;
