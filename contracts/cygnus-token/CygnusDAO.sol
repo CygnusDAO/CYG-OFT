@@ -29,7 +29,7 @@ contract CygnusDAO is OFTV2 {
             2. STORAGE
         ═══════════════════════════════════════════════════════════════════════════════════════════════════════  */
 
-    /// @notice Maximum cap of CYG on this chain
+    /// @notice Maximum mint cap of CYG on this chain
     uint256 public constant CAP = 2_500_000e18;
 
     /// @notice The CYG minter contract
