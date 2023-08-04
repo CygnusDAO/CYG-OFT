@@ -98,11 +98,14 @@ contract CygnusDAO is OFTV2 {
     /// @param amount The amount of CYG token to mint
     /// @custom:security onlyPillars
     function mint(address to, uint256 amount) external onlyPillars {
+        // Gas savings
+        uint256 _totalMinted = totalMinted;
+
         /// @custom:error ExceedsSupplyCap Avoid minting above cap
-        if (totalMinted + amount > CAP) revert ExceedsSupplyCap();
+        if (_totalMinted + amount > CAP) revert ExceedsSupplyCap();
 
         // Increase minted amount
-        totalMinted += amount;
+        totalMinted = _totalMinted + amount;
 
         // Mint internally
         _mint(to, amount);
