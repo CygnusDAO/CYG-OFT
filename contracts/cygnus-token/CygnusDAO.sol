@@ -17,7 +17,7 @@ contract CygnusDAO is OFTV2 {
             1. EVENTS AND ERRORS
         ═══════════════════════════════════════════════════════════════════════════════════════════════════════  */
 
-    /// @custom:event SetCygMinter Emitted when the CYG minter contract is set, can only be emitted once.
+    /// @custom:event NewCYGMinter Emitted when the CYG minter contract is set, only emitted once
     event NewCYGMinter(address oldMinter, address newMinter);
 
     /// @custom:error ExceedsSupplyCap Reverts when minting above cap
@@ -93,7 +93,7 @@ contract CygnusDAO is OFTV2 {
 
     /// @notice Mints CYG token into existence. Uses stored `totalMinted` instead of `totalSupply` as to not break
     //          compatability with lzapp's `_debitFrom` and `_creditTo` functions
-    /// @notice Only the owner can mint, in our case it will be the CygnusComplexRewarder.
+    /// @notice Only the `pillarsOfCreation` contract may mint
     /// @param to The receiver of the CYG token
     /// @param amount The amount of CYG token to mint
     function mint(address to, uint256 amount) external onlyPillars {
