@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.17;
 
+// Dependencies
 import {OFTV2} from "./OFTV2.sol";
 
 /**
@@ -13,11 +14,11 @@ import {OFTV2} from "./OFTV2.sol";
  */
 contract CygnusDAO is OFTV2 {
     /*  ═══════════════════════════════════════════════════════════════════════════════════════════════════════ 
-            1. ERRORS & EVENTS
+            1. EVENTS AND ERRORS
         ═══════════════════════════════════════════════════════════════════════════════════════════════════════  */
 
     /// @custom:event SetCygMinter Emitted when the CYG minter contract is set, can only be emitted once.
-    event NewPillarsOfCreation(address oldPillars, address newPillars);
+    event NewCYGMinter(address oldMinter, address newMinter);
 
     /// @custom:error ExceedsSupplyCap Reverts when minting above cap
     error ExceedsSupplyCap();
@@ -52,13 +53,13 @@ contract CygnusDAO is OFTV2 {
         uint8 _sharedDecimals,
         address _lzEndpoint
     ) OFTV2(_name, _symbol, _sharedDecimals, _lzEndpoint) {
-        // Every chain deployment is the same, 250,000 to 1 year vester, 2,250,000 to pillars
+        // Every chain deployment is the same, 250,000 inital mint, 2,250,000 to pillars
         uint256 initial = 250_000e18;
 
         // Increase initial minted
         totalMinted += initial;
 
-        // Mint to admin
+        // Mint initial supply to admin
         _mint(msg.sender, initial);
     }
 
@@ -81,26 +82,14 @@ contract CygnusDAO is OFTV2 {
     /// @notice Reverts if msg.sender is not CYG minter
     function _checkPillars() private view {
         /// @custom:error OnlyPillars
-        if (msg.sender != pillarsOfCreation) revert OnlyPillars();
+        if (_msgSender() != pillarsOfCreation) revert OnlyPillars();
     }
+
+    /*  ═══════════════════════════════════════════════════════════════════════════════════════════════════════ 
+            6. NON-CONSTANT FUNCTIONS
+        ═══════════════════════════════════════════════════════════════════════════════════════════════════════  */
 
     /*  ────────────────────────────────────────────── External ───────────────────────────────────────────────  */
-
-    /// @notice Assigns the only contract on the chain that can mint the CYG token. Can only be set once.
-    /// @param _pillars The address of the minter contract
-    function setPillarsOfCreation(address _pillars) external onlyOwner {
-        // Current CYG minter
-        address currentPillars = pillarsOfCreation;
-
-        /// @custom:error PillarsAlreadySet Avoid setting the CYG minter again if already initialized
-        if (currentPillars != address(0)) revert PillarsAlreadySet();
-
-        // Assign the only contract that can mint CYG tokens
-        pillarsOfCreation = _pillars;
-
-        /// @custom:event SetCygMinter
-        emit NewPillarsOfCreation(currentPillars, _pillars);
-    }
 
     /// @notice Mints CYG token into existence. Uses stored `totalMinted` instead of `totalSupply` as to not break
     //          compatability with lzapp's `_debitFrom` and `_creditTo` functions
@@ -119,5 +108,18 @@ contract CygnusDAO is OFTV2 {
 
         // Mint internally
         _mint(to, amount);
+    }
+
+    /// @notice Assigns the only contract on the chain that can mint the CYG token. Can only be set once.
+    /// @param _pillars The address of the minter contract
+    function setPillarsOfCreation(address _pillars) external onlyOwner {
+        // Current CYG minter
+        address currentPillars = pillarsOfCreation;
+
+        /// @custom:error PillarsAlreadySet Avoid setting the CYG minter again if already initialized
+        if (currentPillars != address(0)) revert PillarsAlreadySet();
+
+        /// @custom:event NewCYGMinter
+        emit NewCYGMinter(currentPillars, pillarsOfCreation = _pillars);
     }
 }
